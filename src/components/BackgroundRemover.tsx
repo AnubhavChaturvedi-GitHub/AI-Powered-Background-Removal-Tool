@@ -1,13 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { Upload, Download, Loader2, Trash2, ImageIcon, Settings, ChevronDown, ChevronUp } from 'lucide-react';
+import { Upload, Download, Loader2, Trash2, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { removeBackground, loadImage, downloadBlob, ProcessingOptions } from '@/utils/backgroundRemover';
+import { removeBackground, loadImage, downloadBlob } from '@/utils/backgroundRemover';
 
 interface ProcessedImage {
   id: string;
@@ -22,14 +18,6 @@ interface ProcessedImage {
 const BackgroundRemover = () => {
   const [images, setImages] = useState<ProcessedImage[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [processingOptions, setProcessingOptions] = useState<ProcessingOptions>({
-    model: 'general',
-    edgeSmoothing: 2,
-    featherRadius: 1,
-    threshold: 128,
-    enhanceEdges: true
-  });
   const { toast } = useToast();
 
   const processImage = useCallback(async (imageItem: ProcessedImage) => {
@@ -41,7 +29,7 @@ const BackgroundRemover = () => {
       ));
 
       const imageElement = await loadImage(imageItem.originalFile);
-      const processedBlob = await removeBackground(imageElement, processingOptions);
+      const processedBlob = await removeBackground(imageElement);
       const processedUrl = URL.createObjectURL(processedBlob);
 
       setImages(prev => prev.map(img => 
@@ -77,7 +65,7 @@ const BackgroundRemover = () => {
         variant: "destructive",
       });
     }
-  }, [toast, processingOptions]);
+  }, [toast]);
 
   const handleFiles = useCallback((files: FileList) => {
     const validFiles = Array.from(files).filter(file => {
@@ -147,10 +135,6 @@ const BackgroundRemover = () => {
     });
   }, []);
 
-  const handleReprocess = useCallback((image: ProcessedImage) => {
-    processImage(image);
-  }, [processImage]);
-
   return (
     <div className="w-full max-w-4xl mx-auto space-y-8">
       {/* Upload Zone */}
@@ -186,178 +170,6 @@ const BackgroundRemover = () => {
             </Button>
           </label>
         </div>
-      </Card>
-
-      {/* Advanced Settings */}
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Settings className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-semibold">Advanced Settings</h3>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowSettings(!showSettings)}
-          >
-            {showSettings ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </Button>
-        </div>
-        
-        {showSettings && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Model Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="model-select">AI Model</Label>
-              <Select
-                value={processingOptions.model}
-                onValueChange={(value: 'portrait' | 'general' | 'precise') =>
-                  setProcessingOptions(prev => ({ ...prev, model: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select model" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="general">General Purpose</SelectItem>
-                  <SelectItem value="portrait">Portrait & People</SelectItem>
-                  <SelectItem value="precise">High Precision</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {processingOptions.model === 'general' && 'Best for most images, fastest processing'}
-                {processingOptions.model === 'portrait' && 'Optimized for people and portraits'}
-                {processingOptions.model === 'precise' && 'Highest quality, slower processing'}
-              </p>
-            </div>
-
-            {/* Edge Enhancement */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="enhance-edges">Edge Enhancement</Label>
-                <Switch
-                  id="enhance-edges"
-                  checked={processingOptions.enhanceEdges}
-                  onCheckedChange={(checked) =>
-                    setProcessingOptions(prev => ({ ...prev, enhanceEdges: checked }))
-                  }
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Sharpens edges for cleaner cutouts
-              </p>
-            </div>
-
-            {/* Edge Smoothing */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Edge Smoothing</Label>
-                <span className="text-sm text-muted-foreground">{processingOptions.edgeSmoothing}px</span>
-              </div>
-              <Slider
-                value={[processingOptions.edgeSmoothing]}
-                onValueChange={(value) =>
-                  setProcessingOptions(prev => ({ ...prev, edgeSmoothing: value[0] }))
-                }
-                max={10}
-                min={0}
-                step={1}
-                className="w-full"
-              />
-              <p className="text-xs text-muted-foreground">
-                Reduces jagged edges and noise
-              </p>
-            </div>
-
-            {/* Feather Radius */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Feather Radius</Label>
-                <span className="text-sm text-muted-foreground">{processingOptions.featherRadius}px</span>
-              </div>
-              <Slider
-                value={[processingOptions.featherRadius]}
-                onValueChange={(value) =>
-                  setProcessingOptions(prev => ({ ...prev, featherRadius: value[0] }))
-                }
-                max={20}
-                min={0}
-                step={1}
-                className="w-full"
-              />
-              <p className="text-xs text-muted-foreground">
-                Softens edges for natural blending
-              </p>
-            </div>
-
-            {/* Threshold */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Detection Threshold</Label>
-                <span className="text-sm text-muted-foreground">{processingOptions.threshold}</span>
-              </div>
-              <Slider
-                value={[processingOptions.threshold]}
-                onValueChange={(value) =>
-                  setProcessingOptions(prev => ({ ...prev, threshold: value[0] }))
-                }
-                max={255}
-                min={0}
-                step={5}
-                className="w-full"
-              />
-              <p className="text-xs text-muted-foreground">
-                Adjust sensitivity for subject detection
-              </p>
-            </div>
-
-            {/* Quality Preset Buttons */}
-            <div className="space-y-2 md:col-span-2">
-              <Label>Quality Presets</Label>
-              <div className="flex gap-2 flex-wrap">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setProcessingOptions({
-                    model: 'general',
-                    edgeSmoothing: 1,
-                    featherRadius: 0,
-                    threshold: 128,
-                    enhanceEdges: false
-                  })}
-                >
-                  Fast
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setProcessingOptions({
-                    model: 'general',
-                    edgeSmoothing: 2,
-                    featherRadius: 1,
-                    threshold: 128,
-                    enhanceEdges: true
-                  })}
-                >
-                  Balanced
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setProcessingOptions({
-                    model: 'precise',
-                    edgeSmoothing: 3,
-                    featherRadius: 2,
-                    threshold: 100,
-                    enhanceEdges: true
-                  })}
-                >
-                  High Quality
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
       </Card>
 
       {/* Processing Results */}
@@ -420,29 +232,17 @@ const BackgroundRemover = () => {
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-2">
-                    {image.processedBlob && !image.isProcessing && (
-                      <Button
-                        onClick={() => handleDownload(image)}
-                        className="flex-1"
-                        variant="default"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download PNG
-                      </Button>
-                    )}
-                    {!image.isProcessing && (
-                      <Button
-                        onClick={() => handleReprocess(image)}
-                        variant="outline"
-                        className="flex-1"
-                      >
-                        <Settings className="w-4 h-4 mr-2" />
-                        Reprocess
-                      </Button>
-                    )}
-                  </div>
+                  {/* Download Button */}
+                  {image.processedBlob && !image.isProcessing && (
+                    <Button
+                      onClick={() => handleDownload(image)}
+                      className="w-full"
+                      variant="default"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download PNG
+                    </Button>
+                  )}
                 </div>
               </Card>
             ))}
