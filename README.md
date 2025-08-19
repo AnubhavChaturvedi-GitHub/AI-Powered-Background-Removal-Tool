@@ -2,7 +2,7 @@
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/4aee1ad6-2680-4536-9ce1-fceaad886b04
+**URL**: [https://lovable.dev/projects/4aee1ad6-2680-4536-9ce1-fceaad886b04](https://backgroundremoverfreeunlimited.netlify.app/)
 
 ## How can I edit this code?
 
